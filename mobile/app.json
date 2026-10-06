@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "PMS Mobile",
+    "slug": "pms-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FAF9F5",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pms.app"
+    },
+    "android": {
+      "package": "com.pms.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FAF9F5"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
