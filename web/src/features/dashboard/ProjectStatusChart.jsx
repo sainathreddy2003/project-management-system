@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -10,6 +11,7 @@ import {
 } from 'recharts';
 
 export function ProjectStatusChart({ statusBreakdown = [], priorityBreakdown = {} }) {
+  const shouldReduceMotion = useReducedMotion();
   const hasData = statusBreakdown.some((s) => s.count > 0);
 
   const priorityData = [
@@ -21,7 +23,13 @@ export function ProjectStatusChart({ statusBreakdown = [], priorityBreakdown = {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Task Status Distribution */}
-      <div className="p-4 bg-white border border-surface-border rounded-md shadow-xs">
+      <motion.div
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="p-4 bg-white border border-surface-border rounded-md shadow-xs hover:border-zinc-300 transition-colors"
+      >
         <div className="flex items-center justify-between mb-3 border-b border-surface-border pb-2.5">
           <h4 className="text-xs font-semibold text-graphite-900 font-mono uppercase tracking-wider">
             Task Status Distribution
@@ -48,7 +56,13 @@ export function ProjectStatusChart({ statusBreakdown = [], priorityBreakdown = {
                     fontSize: '12px',
                   }}
                 />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                <Bar
+                  dataKey="count"
+                  radius={[0, 4, 4, 0]}
+                  isAnimationActive={!shouldReduceMotion}
+                  animationDuration={700}
+                  animationEasing="ease-out"
+                >
                   {statusBreakdown.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color || '#C2410C'} />
                   ))}
@@ -57,10 +71,16 @@ export function ProjectStatusChart({ statusBreakdown = [], priorityBreakdown = {
             </ResponsiveContainer>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Task Priority Distribution */}
-      <div className="p-4 bg-white border border-surface-border rounded-md shadow-xs">
+      <motion.div
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.35, delay: shouldReduceMotion ? 0 : 0.08, ease: [0.16, 1, 0.3, 1] }}
+        className="p-4 bg-white border border-surface-border rounded-md shadow-xs hover:border-zinc-300 transition-colors"
+      >
         <div className="flex items-center justify-between mb-3 border-b border-surface-border pb-2.5">
           <h4 className="text-xs font-semibold text-graphite-900 font-mono uppercase tracking-wider">
             Task Priority Load
@@ -82,7 +102,13 @@ export function ProjectStatusChart({ statusBreakdown = [], priorityBreakdown = {
                   fontSize: '12px',
                 }}
               />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar
+                dataKey="count"
+                radius={[4, 4, 0, 0]}
+                isAnimationActive={!shouldReduceMotion}
+                animationDuration={700}
+                animationEasing="ease-out"
+              >
                 {priorityData.map((entry, index) => (
                   <Cell key={`cell-priority-${index}`} fill={entry.color} />
                 ))}
@@ -90,7 +116,7 @@ export function ProjectStatusChart({ statusBreakdown = [], priorityBreakdown = {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

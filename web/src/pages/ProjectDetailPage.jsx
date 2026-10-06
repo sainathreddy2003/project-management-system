@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import { projectsApi } from '../api/projects.js';
 import { tasksApi } from '../api/tasks.js';
 import { ProjectStatusBadge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { formatDate } from '../lib/utils.js';
+import { ProgressBar } from '../components/ui/ProgressBar.jsx';
+import { AnimatedNumber } from '../components/ui/AnimatedNumber.jsx';
+import { PageTransition } from '../components/ui/PageTransition.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import { formatDate, cn } from '../lib/utils.js';
 import { TaskTable } from '../features/tasks/TaskTable.jsx';
 import { TaskEditorModal } from '../features/tasks/TaskEditorModal.jsx';
 import { DeleteTaskDialog } from '../features/tasks/DeleteTaskDialog.jsx';
@@ -16,6 +21,8 @@ import { ArrowLeft, Edit2, Trash2, Plus, CheckSquare, Search } from 'lucide-reac
 export function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
+  const shouldReduceMotion = useReducedMotion();
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,18 +41,20 @@ export function ProjectDetailPage() {
   const [isProjectEditorOpen, setIsProjectEditorOpen] = useState(false);
   const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
 
-  const fetchProjectDetails = useCallback(async () => {
+  const fetchProjectDetails = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       setError('');
       const response = await projectsApi.getProject(id);
       if (response.success && response.data) {
         setProject(response.data);
       }
     } catch (err) {
-      setError(err.message || 'Unable to load project details.');
+      if (!isSilent) {
+        setError(err.message || 'Unable to load project details.');
+      }
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [id]);
 
@@ -53,26 +62,59 @@ export function ProjectDetailPage() {
     fetchProjectDetails();
   }, [fetchProjectDetails]);
 
-  // Handle task status toggle directly from table
+  // Handle task status toggle directly from table with signature feedback
   const handleToggleTaskComplete = async (task) => {
     try {
       const nextStatus = task.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
+
+      // Optimistic update
+      setProject((prev) => {
+        if (!prev) return prev;
+        const updatedTasks = prev.tasks.map((t) =>
+          t.id === task.id ? { ...t, status: nextStatus } : t
+        );
+        const completedCount = updatedTasks.filter((t) => t.status === 'COMPLETED').length;
+        const totalCount = updatedTasks.length;
+        const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        return {
+          ...prev,
+          tasks: updatedTasks,
+          completedTasks: completedCount,
+          progress: newProgress,
+        };
+      });
+
       await tasksApi.updateTask(task.id, { status: nextStatus });
-      fetchProjectDetails();
+
+      if (nextStatus === 'COMPLETED') {
+        toast.success('Task completed', `"${task.name}"`);
+      } else {
+        toast.info('Task reopened', `"${task.name}"`);
+      }
+
+      // Re-fetch in background to ensure accurate calculations
+      fetchProjectDetails(true);
     } catch (err) {
-      alert(err.message || 'Failed to update task status.');
+      fetchProjectDetails(true);
+      toast.error('Update failed', err.message || 'Failed to update task status.');
     }
   };
 
-  const handleTaskSaved = () => {
-    fetchProjectDetails();
+  const handleTaskSaved = (savedTask) => {
+    toast.success(
+      editingTask ? 'Task updated' : 'Task created',
+      `"${savedTask?.name || editingTask?.name || 'Task'}" was saved.`
+    );
+    fetchProjectDetails(true);
   };
 
   const handleTaskDeleted = () => {
-    fetchProjectDetails();
+    toast.success('Task deleted', `"${deletingTask?.name || 'Task'}" was removed.`);
+    fetchProjectDetails(true);
   };
 
   const handleProjectDeleted = () => {
+    toast.success('Project deleted', `"${project?.name || 'Project'}" was removed.`);
     navigate('/projects');
   };
 
@@ -104,7 +146,7 @@ export function ProjectDetailPage() {
         <Link to="/projects" className="inline-flex items-center gap-1.5 text-xs text-graphite-500 hover:text-graphite-900">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Projects
         </Link>
-        <ErrorBanner message={error || 'Project not found.'} onRetry={fetchProjectDetails} />
+        <ErrorBanner message={error || 'Project not found.'} onRetry={() => fetchProjectDetails()} />
       </div>
     );
   }
@@ -112,13 +154,13 @@ export function ProjectDetailPage() {
   const progress = project.progress || 0;
 
   return (
-    <div className="space-y-6">
+    <PageTransition className="space-y-6">
       {/* Top Breadcrumb & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-surface-border pb-4">
         <div>
           <Link
             to="/projects"
-            className="inline-flex items-center gap-1.5 text-xs text-graphite-500 hover:text-accent font-medium mb-2"
+            className="inline-flex items-center gap-1.5 text-xs text-graphite-500 hover:text-accent font-medium mb-2 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Projects
           </Link>
@@ -154,19 +196,18 @@ export function ProjectDetailPage() {
       </div>
 
       {/* Progress & Metadata Ribbon */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-white p-4 border border-surface-border rounded-md shadow-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-white p-4 border border-surface-border rounded-md shadow-xs hover:border-zinc-300 transition-colors">
         <div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-graphite-500 block">
             Overall Progress
           </span>
           <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-2 bg-zinc-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-accent rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
+            <div className="flex-1">
+              <ProgressBar progress={progress} height="h-2" />
             </div>
-            <span className="font-mono text-xs font-semibold text-graphite-900">{progress}%</span>
+            <span className="font-mono text-xs font-semibold text-graphite-900 w-10 text-right">
+              <AnimatedNumber value={progress} />%
+            </span>
           </div>
         </div>
 
@@ -175,7 +216,8 @@ export function ProjectDetailPage() {
             Tasks Completed
           </span>
           <p className="font-mono text-sm font-semibold text-graphite-900 mt-1">
-            {project.completedTasks} <span className="text-graphite-400 font-normal">/ {project.totalTasks}</span>
+            <AnimatedNumber value={project.completedTasks} />{' '}
+            <span className="text-graphite-400 font-normal">/ {project.totalTasks}</span>
           </p>
         </div>
 
@@ -207,23 +249,45 @@ export function ProjectDetailPage() {
           </Button>
         </div>
 
-        {/* Task Filter Toolbar */}
+        {/* Task Filter Toolbar with Animated Tab Pill */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2.5 border border-surface-border rounded-md">
-          {/* Status Tabs */}
+          {/* Status Tabs with layoutId motion pill */}
           <div className="flex items-center gap-1 text-xs">
-            {['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'].map((st) => (
-              <button
-                key={st}
-                onClick={() => setTaskStatusFilter(st)}
-                className={`px-2.5 py-1 rounded font-medium transition-colors ${
-                  taskStatusFilter === st
-                    ? 'bg-accent-subtle text-accent font-semibold border border-accent-border'
-                    : 'text-graphite-600 hover:bg-surface-muted'
-                }`}
-              >
-                {st === 'ALL' ? 'All Tasks' : st === 'IN_PROGRESS' ? 'In Progress' : st.charAt(0) + st.slice(1).toLowerCase()}
-              </button>
-            ))}
+            {['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'].map((st) => {
+              const isSelected = taskStatusFilter === st;
+              return (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setTaskStatusFilter(st)}
+                  className={cn(
+                    'relative px-2.5 py-1 rounded font-medium transition-colors',
+                    isSelected
+                      ? 'text-accent font-semibold'
+                      : 'text-graphite-600 hover:text-graphite-900 hover:bg-surface-muted/60'
+                  )}
+                >
+                  {isSelected && (
+                    <motion.span
+                      layoutId="project-tab-pill"
+                      className="absolute inset-0 bg-accent-subtle rounded border border-accent-border"
+                      transition={
+                        shouldReduceMotion
+                          ? { duration: 0 }
+                          : { type: 'spring', stiffness: 380, damping: 30 }
+                      }
+                    />
+                  )}
+                  <span className="relative z-10">
+                    {st === 'ALL'
+                      ? 'All Tasks'
+                      : st === 'IN_PROGRESS'
+                      ? 'In Progress'
+                      : st.charAt(0) + st.slice(1).toLowerCase()}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex items-center gap-2">
@@ -303,7 +367,10 @@ export function ProjectDetailPage() {
         isOpen={isProjectEditorOpen}
         onClose={() => setIsProjectEditorOpen(false)}
         project={project}
-        onSaved={fetchProjectDetails}
+        onSaved={(updated) => {
+          toast.success('Project updated', `"${updated.name}" has been updated.`);
+          fetchProjectDetails(true);
+        }}
       />
 
       {/* Delete Project Dialog */}
@@ -313,6 +380,6 @@ export function ProjectDetailPage() {
         project={project}
         onDeleted={handleProjectDeleted}
       />
-    </div>
+    </PageTransition>
   );
 }

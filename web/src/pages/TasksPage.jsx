@@ -6,9 +6,12 @@ import { TaskEditorModal } from '../features/tasks/TaskEditorModal.jsx';
 import { DeleteTaskDialog } from '../features/tasks/DeleteTaskDialog.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { TableSkeleton, EmptyState, ErrorBanner } from '../components/ui/Skeleton.jsx';
+import { PageTransition } from '../components/ui/PageTransition.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import { Plus, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function TasksPage() {
+  const toast = useToast();
   const [tasks, setTasks] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
@@ -70,11 +73,17 @@ export function TasksPage() {
       setTasks((prev) =>
         prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t))
       );
+
       await tasksApi.updateTask(task.id, { status: nextStatus });
+
+      if (nextStatus === 'COMPLETED') {
+        toast.success('Task completed', `"${task.name}"`);
+      } else {
+        toast.info('Task reopened', `"${task.name}"`);
+      }
     } catch (err) {
-      // Revert on failure
       fetchTasks(pagination.page);
-      alert(err.message || 'Failed to update task status.');
+      toast.error('Update failed', err.message || 'Failed to update task status.');
     }
   };
 
@@ -88,18 +97,23 @@ export function TasksPage() {
     setIsEditorOpen(true);
   };
 
-  const handleSaved = () => {
+  const handleSaved = (savedTask) => {
+    toast.success(
+      editingTask ? 'Task updated' : 'Task created',
+      `"${savedTask?.name || editingTask?.name || 'Task'}" was saved.`
+    );
     fetchTasks(pagination.page);
   };
 
   const handleDeleted = () => {
+    toast.success('Task deleted', `"${deletingTask?.name || 'Task'}" was removed.`);
     fetchTasks(pagination.page);
   };
 
   const hasFilterActive = !!search || !!status || !!priority;
 
   return (
-    <div className="space-y-5">
+    <PageTransition className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -204,6 +218,6 @@ export function TasksPage() {
         task={deletingTask}
         onDeleted={handleDeleted}
       />
-    </div>
+    </PageTransition>
   );
 }

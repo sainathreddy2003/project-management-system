@@ -6,9 +6,12 @@ import { ProjectEditorModal } from '../features/projects/ProjectEditorModal.jsx'
 import { DeleteProjectDialog } from '../features/projects/DeleteProjectDialog.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { TableSkeleton, EmptyState, ErrorBanner } from '../components/ui/Skeleton.jsx';
+import { PageTransition } from '../components/ui/PageTransition.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import { Plus, FolderKanban, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function ProjectsPage() {
+  const toast = useToast();
   const [projects, setProjects] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
@@ -70,18 +73,23 @@ export function ProjectsPage() {
     setIsEditorOpen(true);
   };
 
-  const handleSaved = () => {
+  const handleSaved = (savedProj) => {
+    toast.success(
+      editingProject ? 'Project updated' : 'Project created',
+      `"${savedProj?.name || editingProject?.name || 'Project'}" has been saved.`
+    );
     fetchProjects(pagination.page);
   };
 
   const handleDeleted = () => {
+    toast.success('Project deleted', `"${deletingProject?.name || 'Project'}" was removed.`);
     fetchProjects(pagination.page);
   };
 
   const hasFilterActive = !!search || !!status;
 
   return (
-    <div className="space-y-5">
+    <PageTransition className="space-y-5">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -183,6 +191,6 @@ export function ProjectsPage() {
         project={deletingProject}
         onDeleted={handleDeleted}
       />
-    </div>
+    </PageTransition>
   );
 }

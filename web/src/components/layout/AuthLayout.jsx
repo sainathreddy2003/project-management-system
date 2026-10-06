@@ -1,7 +1,10 @@
 import React from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { FolderGit2 } from 'lucide-react';
 
 export function AuthLayout({ children, title, subtitle }) {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-[#FAF9F5] text-graphite-900 font-sans">
       <div className="w-full max-w-sm">
@@ -15,9 +18,14 @@ export function AuthLayout({ children, title, subtitle }) {
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-surface-border rounded-lg shadow-sm p-6">
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white border border-surface-border rounded-lg shadow-sm p-6"
+        >
           {children}
-        </div>
+        </motion.div>
 
         {/* Footer subtle copy */}
         <p className="text-center text-[11px] text-graphite-400 mt-6 font-mono">

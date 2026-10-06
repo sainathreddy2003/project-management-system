@@ -1,5 +1,6 @@
 import React from 'react';
-import { FolderKanban, CheckCircle2, Clock, AlertCircle, BarChart3 } from 'lucide-react';
+import { FolderKanban, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { AnimatedNumber } from '../../components/ui/AnimatedNumber.jsx';
 
 export function MetricsOverview({ metrics = {} }) {
   const cards = [
@@ -47,7 +48,7 @@ export function MetricsOverview({ metrics = {} }) {
         return (
           <div
             key={i}
-            className="p-3.5 bg-white border border-surface-border rounded-md shadow-xs flex flex-col justify-between"
+            className="p-3.5 bg-white border border-surface-border rounded-md shadow-xs hover:border-zinc-300 transition-colors flex flex-col justify-between"
           >
             <div className="flex items-center justify-between text-graphite-500 mb-1.5">
               <span className="text-[11px] font-mono uppercase tracking-wider font-medium text-graphite-500 truncate">
@@ -57,7 +58,7 @@ export function MetricsOverview({ metrics = {} }) {
             </div>
             <div>
               <div className="text-2xl font-mono font-semibold tracking-tight text-graphite-900">
-                {c.value}
+                <AnimatedNumber value={c.value} />
               </div>
               <p className="text-[11px] text-graphite-500 mt-0.5 truncate">{c.sublabel}</p>
             </div>

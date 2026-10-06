@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -11,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 import { projectsApi } from '../../api/projects.js';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/Button.jsx';
@@ -19,8 +21,10 @@ import { TaskEditorModal } from '../../features/tasks/TaskEditorModal.jsx';
 
 export function AppShell({ children }) {
   const { user, logout } = useAuth();
+  const toast = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
 
   const [recentProjects, setRecentProjects] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -91,6 +95,7 @@ export function AppShell({ children }) {
               </div>
             </div>
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(false)}
               className="p-1 rounded md:hidden text-graphite-400 hover:text-graphite-700"
             >
@@ -98,7 +103,7 @@ export function AppShell({ children }) {
             </button>
           </div>
 
-          {/* Primary Navigation */}
+          {/* Primary Navigation with Motion Layout Pill */}
           <div className="p-3">
             <div className="text-[10px] font-mono uppercase tracking-wider text-graphite-400 px-3 py-1 mb-1 font-semibold">
               Platform
@@ -113,14 +118,25 @@ export function AppShell({ children }) {
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      'flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded transition-colors',
+                      'relative flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded transition-colors',
                       isActive
-                        ? 'bg-accent-subtle text-accent font-semibold border-l-2 border-accent rounded-l-none'
-                        : 'text-graphite-700 hover:bg-surface-muted hover:text-graphite-900'
+                        ? 'text-accent font-semibold'
+                        : 'text-graphite-700 hover:text-graphite-900 hover:bg-surface-muted/60'
                     )}
                   >
-                    <Icon className={cn('w-4 h-4', isActive ? 'text-accent' : 'text-graphite-400')} />
-                    <span>{item.label}</span>
+                    {isActive && (
+                      <motion.span
+                        layoutId="sidebar-active-indicator"
+                        className="absolute inset-0 bg-accent-subtle rounded border-l-2 border-accent"
+                        transition={
+                          shouldReduceMotion
+                            ? { duration: 0 }
+                            : { type: 'spring', stiffness: 380, damping: 30 }
+                        }
+                      />
+                    )}
+                    <Icon className={cn('relative z-10 w-4 h-4', isActive ? 'text-accent' : 'text-graphite-400')} />
+                    <span className="relative z-10">{item.label}</span>
                   </NavLink>
                 );
               })}
@@ -134,9 +150,10 @@ export function AppShell({ children }) {
                 Recent Projects
               </span>
               <button
+                type="button"
                 onClick={() => setIsNewProjectModalOpen(true)}
                 title="Create Project"
-                className="text-graphite-400 hover:text-accent p-0.5"
+                className="text-graphite-400 hover:text-accent p-0.5 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -145,26 +162,35 @@ export function AppShell({ children }) {
               {recentProjects.length === 0 ? (
                 <div className="px-3 py-1 text-[11px] text-graphite-400 italic">No projects yet</div>
               ) : (
-                recentProjects.map((p) => (
-                  <NavLink
-                    key={p.id}
-                    to={`/projects/${p.id}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3 py-1.5 text-xs text-graphite-700 hover:bg-surface-muted hover:text-graphite-900 rounded group"
-                  >
-                    <span className="truncate pr-2">{p.name}</span>
-                    <span
+                recentProjects.map((p) => {
+                  const isCurrent = location.pathname === `/projects/${p.id}`;
+                  return (
+                    <NavLink
+                      key={p.id}
+                      to={`/projects/${p.id}`}
+                      onClick={() => setMobileMenuOpen(false)}
                       className={cn(
-                        'w-1.5 h-1.5 rounded-full shrink-0',
-                        p.status === 'COMPLETED'
-                          ? 'bg-emerald-500'
-                          : p.status === 'IN_PROGRESS'
-                          ? 'bg-amber-500'
-                          : 'bg-zinc-300'
+                        'flex items-center justify-between px-3 py-1.5 text-xs rounded transition-colors group',
+                        isCurrent
+                          ? 'bg-zinc-100 text-graphite-900 font-medium'
+                          : 'text-graphite-700 hover:bg-surface-muted hover:text-graphite-900'
                       )}
-                    />
-                  </NavLink>
-                ))
+                    >
+                      <span className="truncate pr-2">{p.name}</span>
+                      <span
+                        className={cn(
+                          'w-1.5 h-1.5 rounded-full shrink-0 transition-transform group-hover:scale-125',
+                          p.status === 'COMPLETED'
+                            ? 'bg-emerald-500'
+                            : p.status === 'IN_PROGRESS'
+                            ? 'bg-amber-500'
+                            : 'bg-zinc-300'
+                        )}
+                        title={p.status}
+                      />
+                    </NavLink>
+                  );
+                })
               )}
             </div>
           </div>
@@ -183,6 +209,7 @@ export function AppShell({ children }) {
               </div>
             </div>
             <button
+              type="button"
               onClick={logout}
               title="Sign Out"
               className="p-1.5 rounded text-graphite-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0"
@@ -199,6 +226,7 @@ export function AppShell({ children }) {
         <header className="sticky top-0 z-30 h-14 bg-white/95 backdrop-blur-xs border-b border-surface-border px-4 sm:px-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(true)}
               className="p-1.5 rounded md:hidden text-graphite-700 hover:bg-surface-muted"
             >
@@ -255,6 +283,7 @@ export function AppShell({ children }) {
         onClose={() => setIsNewProjectModalOpen(false)}
         onSaved={(newProj) => {
           setIsNewProjectModalOpen(false);
+          toast.success('Project created', `"${newProj.name}" is now active.`);
           navigate(`/projects/${newProj.id}`);
         }}
       />
@@ -262,8 +291,9 @@ export function AppShell({ children }) {
       <TaskEditorModal
         isOpen={isNewTaskModalOpen}
         onClose={() => setIsNewTaskModalOpen(false)}
-        onSaved={() => {
+        onSaved={(newTask) => {
           setIsNewTaskModalOpen(false);
+          toast.success('Task created', `"${newTask?.name || 'New task'}" added to project.`);
           if (location.pathname === '/tasks') {
             window.location.reload();
           } else {

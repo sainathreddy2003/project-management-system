@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import { TaskPriorityBadge, TaskStatusBadge } from '../../components/ui/Badge.jsx';
 import { formatDate, cn } from '../../lib/utils.js';
-import { Check, Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2 } from 'lucide-react';
 
 export function TaskTable({
   tasks = [],
@@ -11,6 +12,8 @@ export function TaskTable({
   onDelete,
   hideProjectColumn = false,
 }) {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="w-full bg-white border border-surface-border rounded-md overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
@@ -33,31 +36,50 @@ export function TaskTable({
                 <tr
                   key={t.id}
                   className={cn(
-                    'hover:bg-zinc-50/80 transition-colors group',
+                    'hover:bg-zinc-50/70 transition-colors group',
                     isCompleted && 'bg-zinc-50/40 text-graphite-400'
                   )}
                 >
-                  {/* Complete Checkbox */}
+                  {/* Complete Checkbox with Signature Motion Path Checkmark */}
                   <td className="py-2.5 px-3 text-center">
-                    <button
+                    <motion.button
                       type="button"
+                      whileTap={shouldReduceMotion ? undefined : { scale: 0.88 }}
                       onClick={() => onToggleComplete(t)}
                       className={cn(
-                        'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+                        'w-4 h-4 rounded border flex items-center justify-center transition-colors mx-auto',
                         isCompleted
                           ? 'bg-emerald-600 border-emerald-600 text-white'
                           : 'border-zinc-300 hover:border-accent bg-white'
                       )}
+                      title={isCompleted ? 'Mark pending' : 'Mark completed'}
                     >
-                      {isCompleted && <Check className="w-3 h-3 stroke-[3]" />}
-                    </button>
+                      {isCompleted && (
+                        <svg
+                          className="w-2.5 h-2.5 text-white"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={3}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <motion.path
+                            d="M3 8.5L6.5 12L13 4.5"
+                            initial={shouldReduceMotion ? false : { pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                          />
+                        </svg>
+                      )}
+                    </motion.button>
                   </td>
 
                   {/* Task Name & Description */}
                   <td className="py-2.5 px-3 max-w-sm">
                     <span
                       className={cn(
-                        'font-medium text-graphite-900',
+                        'font-medium text-graphite-900 transition-colors',
                         isCompleted && 'line-through text-graphite-400 font-normal'
                       )}
                     >
@@ -95,20 +117,22 @@ export function TaskTable({
                     {formatDate(t.dueDate)}
                   </td>
 
-                  {/* Actions */}
+                  {/* Actions with hover reveal */}
                   <td className="py-2.5 px-3 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       <button
+                        type="button"
                         onClick={() => onEdit(t)}
                         title="Edit Task"
-                        className="p-1 rounded text-graphite-400 hover:text-graphite-900 hover:bg-zinc-100 transition-colors"
+                        className="p-1 rounded text-graphite-400 opacity-40 group-hover:opacity-100 hover:text-graphite-900 hover:bg-zinc-100 transition-all"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => onDelete(t)}
                         title="Delete Task"
-                        className="p-1 rounded text-graphite-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="p-1 rounded text-graphite-400 opacity-40 group-hover:opacity-100 hover:text-rose-600 hover:bg-rose-50 transition-all"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

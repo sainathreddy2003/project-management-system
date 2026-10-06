@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ProjectStatusBadge } from '../../components/ui/Badge.jsx';
+import { ProgressBar } from '../../components/ui/ProgressBar.jsx';
 import { formatDate } from '../../lib/utils.js';
 import { Edit2, Trash2, ArrowUpRight } from 'lucide-react';
 
@@ -28,7 +29,7 @@ export function ProjectTable({
             {projects.map((p) => {
               const progress = p.progress || 0;
               return (
-                <tr key={p.id} className="hover:bg-zinc-50/80 transition-colors group">
+                <tr key={p.id} className="hover:bg-zinc-50/70 transition-colors group">
                   {/* Name and Description */}
                   <td className="py-3 px-4 max-w-xs">
                     <Link
@@ -36,7 +37,7 @@ export function ProjectTable({
                       className="font-medium text-graphite-900 group-hover:text-accent transition-colors flex items-center gap-1.5"
                     >
                       <span className="truncate">{p.name}</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-accent" />
                     </Link>
                     {p.description && (
                       <p className="text-[11px] text-graphite-500 truncate mt-0.5">{p.description}</p>
@@ -57,11 +58,8 @@ export function ProjectTable({
                   {/* Progress bar */}
                   <td className="py-3 px-3 min-w-[130px]">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-zinc-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-accent rounded-full transition-all duration-300"
-                          style={{ width: `${progress}%` }}
-                        />
+                      <div className="flex-1">
+                        <ProgressBar progress={progress} height="h-1.5" />
                       </div>
                       <span className="font-mono text-[11px] text-graphite-600 w-8 text-right">
                         {progress}%
@@ -83,16 +81,18 @@ export function ProjectTable({
                   <td className="py-3 px-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       <button
+                        type="button"
                         onClick={() => onEdit(p)}
                         title="Edit Project"
-                        className="p-1 rounded text-graphite-400 hover:text-graphite-900 hover:bg-zinc-100 transition-colors"
+                        className="p-1 rounded text-graphite-400 opacity-40 group-hover:opacity-100 hover:text-graphite-900 hover:bg-zinc-100 transition-all"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => onDelete(p)}
                         title="Delete Project"
-                        className="p-1 rounded text-graphite-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="p-1 rounded text-graphite-400 opacity-40 group-hover:opacity-100 hover:text-rose-600 hover:bg-rose-50 transition-all"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
