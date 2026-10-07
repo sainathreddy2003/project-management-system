@@ -1,0 +1,19 @@
+{
+  "name": "project-management-system",
+  "version": "1.0.0",
+  "description": "Cross-Platform Project Management System with shared Node.js Express API and React Vite web application",
+  "private": true,
+  "scripts": {
+    "start": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan.bold,yellow.bold\" \"npm run dev --prefix backend\" \"npm run dev --prefix web\"",
+    "dev": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan.bold,yellow.bold\" \"npm run dev --prefix backend\" \"npm run dev --prefix web\"",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm run dev --prefix web",
+    "mobile": "npm start --prefix mobile",
+    "db:init": "npm run db:init --prefix backend",
+    "db:seed": "npm run db:seed --prefix backend",
+    "test": "npm test --prefix backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

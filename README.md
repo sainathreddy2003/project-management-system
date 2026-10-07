@@ -288,6 +288,24 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:5001/api
 
 ---
 
+## Quick Start (One Command for Both Backend & Web)
+
+From the project root, run either:
+
+```bash
+npm start
+# or: ./start.sh
+# or: node start.js
+```
+
+This concurrently boots up:
+- **Backend REST API**: `http://localhost:5001`
+- **Web Frontend**: `http://localhost:5173`
+
+*(Press `Ctrl+C` in your terminal to cleanly stop both servers at once).*
+
+---
+
 ## Local Setup Guide (Step-by-Step)
 
 ### Prerequisites
