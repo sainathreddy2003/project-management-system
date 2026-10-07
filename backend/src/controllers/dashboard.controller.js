@@ -1,10 +1,15 @@
-import * as dashboardService from '../services/dashboard.service.js';
-import { sendSuccess } from '../utils/response.js';
+import * as DashboardModel from '../models/dashboard.model.js';
+import { renderSuccess } from '../views/response.view.js';
+
+/**
+ * DASHBOARD CONTROLLER
+ * Handles HTTP requests for aggregated executive metrics and charts from DashboardModel.
+ */
 
 export async function getDashboard(req, res, next) {
   try {
-    const data = await dashboardService.getDashboardMetrics(req.user.id);
-    return sendSuccess(res, data, null, 200);
+    const data = await DashboardModel.getDashboardMetrics(req.user.id);
+    return renderSuccess(res, data, null, 200);
   } catch (err) {
     next(err);
   }

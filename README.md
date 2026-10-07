@@ -67,19 +67,35 @@ The stack is intentionally selected around core modern JavaScript proficiencies 
 
 ---
 
-## Repository Structure
+## Repository Structure (MVC Architecture)
 
 ```
 .
-├── backend/                  # Shared Node.js Express REST API
+├── backend/                  # Shared Node.js Express REST API (MVC Pattern)
 │   ├── src/
 │   │   ├── app.js            # Express application configuration & middleware
 │   │   ├── server.js         # HTTP server entrypoint
 │   │   ├── config/           # MySQL pool connection & auto-table initialization
-│   │   ├── controllers/      # auth, project, task, dashboard controllers
+│   │   ├── models/           # [M] MODEL: MySQL database queries & tenancy isolation
+│   │   │   ├── user.model.js
+│   │   │   ├── project.model.js
+│   │   │   ├── task.model.js
+│   │   │   ├── dashboard.model.js
+│   │   │   └── audit.model.js
+│   │   ├── views/            # [V] VIEW: Standardized JSON API response presenters
+│   │   │   └── response.view.js
+│   │   ├── controllers/      # [C] CONTROLLER: Request handling & calling models
+│   │   │   ├── auth.controller.js
+│   │   │   ├── project.controller.js
+│   │   │   ├── task.controller.js
+│   │   │   └── dashboard.controller.js
+│   │   ├── routes/           # ROUTING: Maps HTTP verbs to controllers
+│   │   │   ├── auth.routes.js
+│   │   │   ├── project.routes.js
+│   │   │   ├── task.routes.js
+│   │   │   ├── dashboard.routes.js
+│   │   │   └── index.js
 │   │   ├── middleware/       # JWT auth, rate limiter, error handler, logger
-│   │   ├── routes/           # REST endpoint routers
-│   │   ├── services/         # Tenancy-guarded MySQL service queries
 │   │   ├── validators/       # Request validation & parameter sanitization
 │   │   └── scripts/          # Database table creation and deterministic seeding
 │   ├── tests/
