@@ -252,7 +252,7 @@ export function ProjectDetailPage() {
         {/* Task Filter Toolbar with Animated Tab Pill */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2.5 border border-surface-border rounded-md">
           {/* Status Tabs with layoutId motion pill */}
-          <div className="flex items-center gap-1 text-xs">
+          <div className="flex items-center gap-1 text-xs overflow-x-auto pb-1 sm:pb-0">
             {['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'].map((st) => {
               const isSelected = taskStatusFilter === st;
               return (
@@ -261,7 +261,7 @@ export function ProjectDetailPage() {
                   type="button"
                   onClick={() => setTaskStatusFilter(st)}
                   className={cn(
-                    'relative px-2.5 py-1 rounded font-medium transition-colors',
+                    'relative px-2.5 py-1 rounded font-medium transition-colors shrink-0',
                     isSelected
                       ? 'text-accent font-semibold'
                       : 'text-graphite-600 hover:text-graphite-900 hover:bg-surface-muted/60'
@@ -290,8 +290,8 @@ export function ProjectDetailPage() {
             })}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <div className="relative flex-1 sm:w-48">
               <Search className="w-3.5 h-3.5 text-graphite-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"

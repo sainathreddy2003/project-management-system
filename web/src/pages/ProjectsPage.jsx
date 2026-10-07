@@ -145,7 +145,7 @@ export function ProjectsPage() {
           />
 
           {/* Pagination bar */}
-          <div className="flex items-center justify-between text-xs text-graphite-500 px-1 pt-1 font-mono">
+          <div className="flex items-center justify-between text-xs text-graphite-500 px-1 pt-1 font-mono flex-wrap gap-2">
             <span>
               Showing {projects.length} of {pagination.total} projects &bull; Page {pagination.page} of{' '}
               {pagination.totalPages}

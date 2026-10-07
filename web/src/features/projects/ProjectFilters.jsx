@@ -35,7 +35,7 @@ export function ProjectFilters({
       </div>
 
       {/* Filter Selects */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <select
           value={status}
           onChange={(e) => onStatusChange(e.target.value)}
