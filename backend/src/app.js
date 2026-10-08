@@ -17,8 +17,19 @@ const webDistPath = path.resolve(__dirname, '../../web/dist');
 const hasWebDist = fs.existsSync(webDistPath) && fs.existsSync(path.join(webDistPath, 'index.html'));
 
 
-// Security headers
-app.use(helmet());
+// Security headers - relaxed CSP & CORP so React SPA and Google Fonts load cleanly
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+// Serve frontend static files immediately (never blocked by CORS or body parsers)
+if (hasWebDist) {
+  app.use(express.static(webDistPath));
+}
 
 // CORS configuration
 app.use(
@@ -35,13 +46,26 @@ app.use(
       // Check for wildcard domains (e.g. *.vercel.app, *.onrender.com)
       try {
         const originUrl = new URL(origin);
+        // Automatically allow any onrender.com or vercel.app deployment
+        if (
+          originUrl.hostname.endsWith('.onrender.com') ||
+          originUrl.hostname.endsWith('.vercel.app') ||
+          originUrl.hostname === 'localhost' ||
+          originUrl.hostname === '127.0.0.1'
+        ) {
+          return callback(null, true);
+        }
+
         const matchesWildcard = allowed.some((pattern) => {
-          if (pattern.startsWith('*.')) {
-            const domainSuffix = pattern.slice(2);
+          if (!pattern) return false;
+          const cleanPattern = pattern.replace(/^https?:\/\//, '');
+          if (cleanPattern.startsWith('*.')) {
+            const domainSuffix = cleanPattern.slice(1);
             return originUrl.hostname.endsWith(domainSuffix);
           }
-          return false;
+          return pattern === origin;
         });
+
         if (matchesWildcard) return callback(null, true);
       } catch {
         // invalid URL
@@ -51,7 +75,8 @@ app.use(
         return callback(null, true);
       }
 
-      return callback(new Error(`CORS policy blocked access from origin: ${origin}`));
+      // Safe CORS rejection: deny headers without throwing 500 server crash
+      return callback(null, false);
     },
     credentials: true,
   })
@@ -77,11 +102,8 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api', routes);
 
-// Serve frontend static files if built (single-service fullstack deployment)
+// SPA fallback: any non-API GET request serves index.html
 if (hasWebDist) {
-  app.use(express.static(webDistPath));
-
-  // SPA fallback: any non-API GET request serves index.html
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next();
