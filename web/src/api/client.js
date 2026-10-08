@@ -1,9 +1,14 @@
 import axios from 'axios';
 
-// Base URL resolution with normalization for deployed environments
-const envURL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').trim();
+// Base URL resolution: supports both standalone API URL and unified same-origin /api deployment
+const defaultURL =
+  typeof window !== 'undefined' && window.location.port === '5173'
+    ? 'http://localhost:5001/api'
+    : '/api';
+const envURL = (import.meta.env.VITE_API_URL || defaultURL).trim();
 const cleanURL = envURL.replace(/\/+$/, '');
 const baseURL = cleanURL.endsWith('/api') ? cleanURL : `${cleanURL}/api`;
+
 
 export const apiClient = axios.create({
   baseURL,

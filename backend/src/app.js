@@ -1,6 +1,9 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { config } from './config/index.js';
 import routes from './routes/index.js';
 import { requestLogger } from './middleware/requestLogger.js';
@@ -8,6 +11,11 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { sendError } from './utils/response.js';
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const webDistPath = path.resolve(__dirname, '../../web/dist');
+const hasWebDist = fs.existsSync(webDistPath) && fs.existsSync(path.join(webDistPath, 'index.html'));
+
 
 // Security headers
 app.use(helmet());
@@ -66,29 +74,44 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    service: 'Project Management System API',
-    version: '1.0.0',
-    documentation: '/api',
-    endpoints: {
-      health: '/health',
-      auth: '/api/auth',
-      projects: '/api/projects',
-      tasks: '/api/tasks',
-      dashboard: '/api/dashboard',
-    },
-  });
-});
-
 // API Routes
 app.use('/api', routes);
 
-// 404 handler
+// Serve frontend static files if built (single-service fullstack deployment)
+if (hasWebDist) {
+  app.use(express.static(webDistPath));
+
+  // SPA fallback: any non-API GET request serves index.html
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    return res.sendFile(path.join(webDistPath, 'index.html'));
+  });
+} else {
+  // If web/dist is not present, provide default API metadata on root
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      service: 'Project Management System API',
+      version: '1.0.0',
+      documentation: '/api',
+      endpoints: {
+        health: '/health',
+        auth: '/api/auth',
+        projects: '/api/projects',
+        tasks: '/api/tasks',
+        dashboard: '/api/dashboard',
+      },
+    });
+  });
+}
+
+// 404 handler for API routes
 app.use((req, res) => {
   sendError(res, `Route ${req.method} ${req.originalUrl} not found.`, 404);
 });
+
 
 
 // Centralized error handler
