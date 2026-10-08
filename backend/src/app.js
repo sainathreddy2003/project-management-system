@@ -12,16 +12,38 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// CORS configuration (no wildcard with credentials)
+// CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
-      if (config.cors.origin.includes(origin) || config.cors.origin.includes('*')) {
+
+      const allowed = config.cors.origin;
+      if (allowed.includes('*') || allowed.includes(origin)) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissive in dev, controlled in prod
+
+      // Check for wildcard domains (e.g. *.vercel.app, *.onrender.com)
+      try {
+        const originUrl = new URL(origin);
+        const matchesWildcard = allowed.some((pattern) => {
+          if (pattern.startsWith('*.')) {
+            const domainSuffix = pattern.slice(2);
+            return originUrl.hostname.endsWith(domainSuffix);
+          }
+          return false;
+        });
+        if (matchesWildcard) return callback(null, true);
+      } catch {
+        // invalid URL
+      }
+
+      if (config.env === 'development') {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS policy blocked access from origin: ${origin}`));
     },
     credentials: true,
   })
@@ -34,6 +56,32 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Request logging
 app.use(requestLogger);
 
+// Root health check endpoints for cloud PaaS uptime monitors (Render, Railway, Fly.io, AWS)
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'pms-backend',
+    env: config.env,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'Project Management System API',
+    version: '1.0.0',
+    documentation: '/api',
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth',
+      projects: '/api/projects',
+      tasks: '/api/tasks',
+      dashboard: '/api/dashboard',
+    },
+  });
+});
+
 // API Routes
 app.use('/api', routes);
 
@@ -41,6 +89,7 @@ app.use('/api', routes);
 app.use((req, res) => {
   sendError(res, `Route ${req.method} ${req.originalUrl} not found.`, 404);
 });
+
 
 // Centralized error handler
 app.use(errorHandler);

@@ -246,11 +246,16 @@ async function seed() {
   console.log('--------------------------------------------------');
 }
 
-seed()
-  .catch((err) => {
-    console.error('[SEED] Error running seed script:', err);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await pool.end();
-  });
+export { seed };
+
+if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
+  seed()
+    .catch((err) => {
+      console.error('[SEED] Error running seed script:', err);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await pool.end();
+    });
+}
+

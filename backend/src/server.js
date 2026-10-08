@@ -5,9 +5,35 @@ import { logger } from './utils/logger.js';
 
 async function startServer() {
   try {
-    // Ensure MySQL database schema and tables exist
-    await initDatabase();
-    logger.info('MySQL Database connected and verified.');
+    // Ensure MySQL database schema and tables exist with connection retries for cloud PaaS cold starts
+    let retries = 5;
+    while (retries > 0) {
+      try {
+        await initDatabase();
+        logger.info('MySQL Database connected and verified.');
+        break;
+      } catch (dbErr) {
+        retries -= 1;
+        if (retries === 0) {
+          throw dbErr;
+        }
+        logger.warn(`Database connection attempt failed, retrying in 2s (${retries} attempts left)...`, {
+          error: dbErr.message,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+
+    // Optional auto-seeding for staging/demo cloud deployments
+    if (config.autoSeed) {
+      try {
+        const { seed } = await import('./scripts/seed.js');
+        await seed();
+        logger.info('Database auto-seeded successfully.');
+      } catch (seedErr) {
+        logger.warn('Auto-seed failed or skipped:', { error: seedErr.message });
+      }
+    }
 
     const server = app.listen(config.port, () => {
       logger.info(`Project Management System Backend listening on port ${config.port}`, {
@@ -15,6 +41,7 @@ async function startServer() {
         env: config.env,
       });
     });
+
 
     const shutdown = async (signal) => {
       logger.info(`Received ${signal}. Shutting down gracefully...`);

@@ -1,13 +1,16 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// Base URL resolution with normalization for deployed environments
+const envURL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').trim();
+const cleanURL = envURL.replace(/\/+$/, '');
+const baseURL = cleanURL.endsWith('/api') ? cleanURL : `${cleanURL}/api`;
 
 export const apiClient = axios.create({
   baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 15000,
 });
 
 apiClient.interceptors.request.use(

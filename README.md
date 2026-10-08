@@ -382,16 +382,24 @@ npx expo start --android
 
 ---
 
-## Running with Docker Compose
+## Running with Docker Compose & Cloud Deployment
 
-For evaluators who prefer one command to start the entire backend and database:
+### 1. One-Command Full Stack Docker (MySQL + Backend + Web Nginx)
 ```bash
-# Start MySQL container + Backend container
+# Build and start all 3 services in one command
 docker compose up --build
-
-# In a separate terminal, launch the web client
-cd web && npm run dev
 ```
+- **Web App**: `http://localhost:3000` (Served via optimized Nginx with SPA routing)
+- **Backend API**: `http://localhost:5001/api`
+- **Health Check**: `http://localhost:5001/health`
+- **MySQL Database**: `localhost:3306`
+
+### 2. Cloud PaaS Deployment (Vercel, Render, Railway)
+Detailed step-by-step instructions for deploying to cloud infrastructure are available in [docs/DEPLOYMENT.md](file:///Users/sainathreddy/Downloads/intern_task/docs/DEPLOYMENT.md):
+- **Web Frontend**: 1-click deploy to **Vercel** or **Netlify** with built-in SPA routing (`vercel.json` and `_redirects`).
+- **Backend API**: Deploy to **Render** or **Railway** using `render.yaml` or `railway.json`.
+- **Database**: Connect to cloud MySQL (Railway, Aiven, or PlanetScale) using `DATABASE_URL` with SSL support.
+
 
 ---
 

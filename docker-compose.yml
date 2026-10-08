@@ -37,12 +37,26 @@ services:
       JWT_SECRET: pms-super-secure-production-ready-jwt-secret-key-2026
       JWT_EXPIRES_IN: 15m
       REFRESH_EXPIRES_DAYS: 7
-      CORS_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000
+      CORS_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:80
     depends_on:
       mysql:
         condition: service_healthy
     command: >
       sh -c "npm run db:init && npm run db:seed && npm start"
 
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5001/api
+    container_name: pms-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
 volumes:
   mysql_data:
+
